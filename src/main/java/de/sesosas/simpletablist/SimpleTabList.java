@@ -6,6 +6,7 @@ import de.sesosas.simpletablist.classes.handlers.internal.IntervalHandler;
 import de.sesosas.simpletablist.classes.handlers.spigot.UpdateHandler;
 import de.sesosas.simpletablist.classes.handlers.tab.NameHandler;
 import de.sesosas.simpletablist.classes.handlers.worldbased.TabWBHandler;
+import de.sesosas.simpletablist.classes.scheduler.Scheduler;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.event.EventBus;
 import net.luckperms.api.event.LuckPermsEvent;
@@ -20,6 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import de.sesosas.simpletablist.classes.handlers.tab.AnimationHandler;
 
@@ -35,10 +37,15 @@ public final class SimpleTabList extends JavaPlugin implements Listener {
         return plugin;
     }
 
+    private Scheduler scheduler = null;
+
+    @Override
+    public void onLoad() {
+        plugin = this;
+    }
+
     @Override
     public void onEnable() {
-        plugin = this;
-
         NameHandler.initScoreboard();
 
         java.lang.String[] headerString = new java.lang.String[]{"This is a header and animation {animation:0}!", "You: %player_name%!"};
@@ -61,7 +68,7 @@ public final class SimpleTabList extends JavaPlugin implements Listener {
         config.addDefault("Footer.Content", footerString);
         config.addDefault("Chat.Prefix", "§f[§cSTL§f]");
         config.addDefault("Chat.ActionbarMessage", false);
-        config.addDefault("Tab.Refresh.Interval.Enable", false);
+        config.addDefault("Tab.Refresh.Interval.OtherThreadPool", false);
         config.addDefault("Tab.Refresh.Interval.Time", 1L);
         config.addDefault("bstats.Enable", true);
         config.options().copyDefaults(true);
@@ -98,10 +105,12 @@ public final class SimpleTabList extends JavaPlugin implements Listener {
             }
         });
 
-        interval = new IntervalHandler(this, config.getLong("Tab.Refresh.Interval.Time") * 20L);
-        interval.runTaskTimer(this, 0L, SimpleTabList.getPlugin().config.getLong("Tab.Refresh.Interval.Time") * 20L);
-        interval.setEnabled(config.getBoolean("Tab.Refresh.Interval.Enable"));
-
+        if (config.getBoolean("Tab.Refresh.Interval.OtherThreadPool")) {
+            scheduler = new Scheduler(1);
+            scheduler.registerSchedule("tab", new IntervalHandler(), config.getLong("Tab.Refresh.Interval.Time"), TimeUnit.SECONDS);
+        } else {
+            Bukkit.getScheduler().runTaskTimer(SimpleTabList.getPlugin(), new IntervalHandler(), 0L, SimpleTabList.getPlugin().config.getLong("Tab.Refresh.Interval.Time") * 20);
+        }
         getServer().getPluginManager().registerEvents(new IEventHandler(), this);
         getCommand("stl-reload").setExecutor(new ReloadCommand());
         System.out.println("Simple TabList has started!");
@@ -109,5 +118,15 @@ public final class SimpleTabList extends JavaPlugin implements Listener {
 
     private <T extends LuckPermsEvent> void onNodeAddEvent(T t) {
         NameHandler.Update();
+    }
+
+    @Override
+    public void onDisable() {
+        if (scheduler == null) return;
+        scheduler.cancelSchedule("tab");
+    }
+
+    public Scheduler getScheduler() {
+        return scheduler;
     }
 }

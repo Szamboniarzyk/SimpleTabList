@@ -6,6 +6,7 @@ import de.sesosas.simpletablist.classes.handlers.lp.PermissionsHandler;
 import de.sesosas.simpletablist.SimpleTabList;
 import de.sesosas.simpletablist.classes.handlers.internal.MessageHandler;
 import de.sesosas.simpletablist.classes.handlers.tab.TabHandler;
+import de.sesosas.simpletablist.classes.scheduler.Scheduler;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -18,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import static de.sesosas.simpletablist.classes.handlers.tab.AnimationHandler.loadAnimationsConfig;
 
@@ -37,10 +39,13 @@ public class ReloadCommand implements CommandExecutor {
                 TabHandler.UpdateTab(p);
             }
 
-            SimpleTabList.interval.cancel();
-            SimpleTabList.interval = new IntervalHandler(SimpleTabList.getPlugin(), SimpleTabList.getPlugin().config.getLong("Tab.Refresh.Interval.Time") * 20L);
-            SimpleTabList.interval.runTaskTimer(SimpleTabList.getPlugin(), 0L, SimpleTabList.getPlugin().config.getLong("Tab.Refresh.Interval.Time") * 20L);
-            SimpleTabList.interval.setEnabled(SimpleTabList.getPlugin().config.getBoolean("Tab.Refresh.Interval.Enable"));
+            if (SimpleTabList.getPlugin().config.getBoolean("Tab.Refresh.Interval.OtherThreadPool")) {
+                Scheduler scheduler = SimpleTabList.getPlugin().getScheduler();
+                if (scheduler == null) scheduler = new Scheduler(1);
+                scheduler.registerSchedule("tab", new IntervalHandler(), SimpleTabList.getPlugin().config.getLong("Tab.Refresh.Interval.Time"), TimeUnit.SECONDS);
+            } else {
+                Bukkit.getScheduler().runTaskTimer(SimpleTabList.getPlugin(), new IntervalHandler(), 0L, SimpleTabList.getPlugin().config.getLong("Tab.Refresh.Interval.Time") * 20);
+            }
 
             String text = "Successfully reloaded the Config!";
             MessageHandler.Send(player, ChatColor.AQUA + text);
@@ -48,3 +53,4 @@ public class ReloadCommand implements CommandExecutor {
         return false;
     }
 }
+

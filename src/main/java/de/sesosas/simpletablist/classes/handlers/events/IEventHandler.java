@@ -25,7 +25,7 @@ public class IEventHandler implements Listener  {
 
     @EventHandler
     public void OnPlayerQuit(PlayerQuitEvent event){
-        Thread thread = new Thread(() -> NameHandler.Update());
+        Thread thread = new Thread(NameHandler::Update);
         thread.start();
     }
     @EventHandler

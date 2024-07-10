@@ -1,7 +1,7 @@
 name: SimpleTabList
 version: '${project.version}'
 main: de.sesosas.simpletablist.SimpleTabList
-authors: [ SESOSAS ]
+authors: [ SESOSAS, Szamboniarzyk ]
 description: A TabList which is using LuckPerms Prefix and Suffixes
 depend: [LuckPerms, PlaceholderAPI]
 commands:
