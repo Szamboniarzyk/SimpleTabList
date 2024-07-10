@@ -29,6 +29,8 @@ This Plugin is showing prefix & suffixes in the TabList which you can provide by
 
 - Prefix & suffixes provided by LuckPerms
 
+- Run TabList on other thread
+
 - Update Tablist on LuckPerms save changes & each second
 
 - Own Placeholders
